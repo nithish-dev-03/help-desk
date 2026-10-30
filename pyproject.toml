@@ -1,0 +1,13 @@
+[project]
+name = "help-desk"
+version = "0.1.0"
+description = "This is the help desk application created for learning"
+readme = "README.md"
+requires-python = ">=3.15"
+dependencies = [
+    "fastapi[standard]>=0.162.0",
+    "psycopg>=3.3.6",
+    "sqlalchemy>=2.1.6",
+]
+[tool.fastapi]
+entrypoint = "app.main:app"
