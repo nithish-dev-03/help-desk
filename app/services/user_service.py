@@ -10,3 +10,9 @@ class UserService:
 
     def verify_user(self,payload:UserLogin) -> bool:
         return self.repo.login_user(payload)
+
+    def reset_pass(self,payload:UserLogin):
+        return self.repo.reset_password(payload)
+
+    def remove_user(self,payload:int):
+        return self.repo.delete_user(payload)

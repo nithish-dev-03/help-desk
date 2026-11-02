@@ -13,7 +13,7 @@ user_router = APIRouter(prefix="/auth",tags=["auth"])
 def login(payload: UserLogin, response: Response, db=Depends(get_db)):
     repo = UserRepository(db)
     service = UserService(repo)
-    data = service.repo.login_user(payload)
+    data = service.verify_user(payload)
     if data:
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=TIME_LIMIT)
         response.set_cookie(key=SESSION_KEY,value=data,expires=expires_at,httponly=False)
@@ -32,10 +32,42 @@ def login(payload: UserLogin, response: Response, db=Depends(get_db)):
 def register(payload:UserRegister,db=Depends(get_db)):
     repo = UserRepository(db)
     service = UserService(repo)
-    res_data = service.repo.create_user(payload)
+    res_data = service.register_user(payload)
 
     return {
         "status":True,
         "data": res_data,
         "message":f"Welcome {res_data.name}!"
     }
+
+@user_router.post("/forget")
+def forget_password(payload:UserLogin,db=Depends(get_db)):
+    repo= UserRepository(db)
+    service = UserService(repo)
+    res = service.reset_pass(payload)
+    if res:
+        return{
+            "status":True,
+            "message":"Password reset successfully!"
+        }
+    else:
+        return{
+            "status":False,
+            "message":"Invalid credential"
+        }
+
+@user_router.delete("/{id}")
+def delete_user(id:int,db=Depends(get_db)):
+    repo = UserRepository(db)
+    service = UserService(repo)
+    pop_item = service.remove_user(id)
+    if pop_item:
+        return {
+            "status":True,
+            "message":f"{pop_item.name} entry have been deleted successfully"
+        }
+    else:
+        return{
+            "status":False,
+            "message":"Invalid user ID"
+        }

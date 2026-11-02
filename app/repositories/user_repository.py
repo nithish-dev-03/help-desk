@@ -39,3 +39,22 @@ class UserRepository:
         token_data.update({"exp":expires_at})
 
         return encode(token_data,SECRET_KEY,ALGORITHM)
+
+    def reset_password(self,payload:UserLogin):
+        db_data = self.db.query(User).filter(User.email == payload.email).first()
+        if db_data:
+            db_data.password_hash = hash_password(payload.password)
+            self.db.commit()
+            self.db.refresh(db_data)
+            return db_data
+        else:
+            return None
+
+    def delete_user(self,id:int):
+        db_data = self.db.get(User,id)
+        if db_data:
+            self.db.delete(db_data)
+            self.db.commit()
+            return db_data
+        else:
+            return None
