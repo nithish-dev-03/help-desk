@@ -1,5 +1,5 @@
 from app.repositories.ticket_repository import TicketRepository
-from app.schemas.tickets import TicketCreate
+from app.schemas.tickets import TicketCreate, TicketUpdate
 
 
 class TicketService:
@@ -15,7 +15,7 @@ class TicketService:
     def get_ticket(self,id:int):
         return self.repo.get_ticket(id)
 
-    def update_ticket(self, id: int, data: TicketCreate):
+    def update_ticket(self, id: int, data: TicketUpdate):
         return self.repo.update_by_id(id,data)
 
     def delete_ticket(self, id:int):

@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from app.core.config import APP_NAME
 from app.api.v1.router import router
-from app.db.postgres import Base, engine
+from app.db.postgres import engine
+from app.db.base import Base
+
+from app.models.tickets import Ticket
+from app.models.users import User
 
 app = FastAPI(docs_url="/",title=APP_NAME )
 Base.metadata.create_all(bind=engine)

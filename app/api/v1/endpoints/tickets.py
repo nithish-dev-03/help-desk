@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.postgres import get_db
-from app.schemas.tickets import TicketCreate
+from app.schemas.tickets import TicketCreate, TicketUpdate
 from app.repositories.ticket_repository import TicketRepository
 from app.services.ticket_service import TicketService
 
@@ -59,7 +59,7 @@ def get_ticket_with_id(id:int,db=Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Ticket not found")
 
 @ticket_router.put("/{id}/")
-def update_ticket(id:int, data: TicketCreate, db: Session = Depends(get_db)):
+def update_ticket(id: int, data: TicketUpdate, db: Session = Depends(get_db)):
     """
     Create new Ticket
     """

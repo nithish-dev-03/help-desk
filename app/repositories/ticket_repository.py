@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
 from app.models.tickets import Ticket
-from app.schemas.tickets import TicketCreate
+from app.schemas.tickets import TicketCreate, TicketUpdate
 
 class TicketRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, payload):
+    def create(self, payload:TicketCreate):
         ticket = Ticket(
             title=payload.title,
             description=payload.description,
@@ -24,7 +24,7 @@ class TicketRepository:
     def get_ticket(self,id:int):
         return self.db.get(Ticket,id)
 
-    def update_by_id(self, id: int, val: TicketCreate):
+    def update_by_id(self, id: int, val: TicketUpdate):
             data = self.db.query(Ticket).filter(Ticket.id == id).first()
             if data is None:
                 return None
