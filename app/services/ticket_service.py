@@ -17,3 +17,6 @@ class TicketService:
 
     def update_ticket(self, id: int, data: TicketCreate):
         return self.repo.update_by_id(id,data)
+
+    def delete_ticket(self, id:int):
+        return self.repo.delete_ticket(id)

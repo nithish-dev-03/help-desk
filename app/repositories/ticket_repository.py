@@ -38,3 +38,9 @@ class TicketRepository:
             self.db.refresh(data)
             return data
 
+    def delete_ticket(self,id:int):
+         db_data = self.db.query(Ticket).filter(Ticket.id == id).first()
+         self.db.delete(db_data)
+         self.db.commit()
+         return db_data
+
