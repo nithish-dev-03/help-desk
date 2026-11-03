@@ -24,9 +24,20 @@ def get_current_user(request: Request,token: str | None = Cookie(default=None, a
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="User not found")
 
         if not user_data.is_active:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Account is inactive")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Account is inactive")
 
         return user_data
 
-    except:
+    except HTTPException:
+        raise
+    except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid or expired token")
+
+
+def role_based_access(*allowed_roles: str):
+    def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user is None or current_user.role not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You do not have permission to perform this action")
+
+        return current_user
+    return role_checker

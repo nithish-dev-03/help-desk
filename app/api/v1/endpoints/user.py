@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Response
-from app.schemas.users import UserLogin, UserRegister, UserResponse
-from app.core.security import hash_password, verify_password
+from app.schemas.users import UserLogin, UserRegister
 from app.db.postgres import get_db
 from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
@@ -71,3 +70,11 @@ def delete_user(id:int,db=Depends(get_db)):
             "status":False,
             "message":"Invalid user ID"
         }
+
+@user_router.get("/logout")
+def logout(response:Response): 
+    response.delete_cookie(SESSION_KEY)
+    return {
+        "status":True,
+        "message":"Logout succesfully"
+    }
