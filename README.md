@@ -1,60 +1,63 @@
-# Help Desk Ticket API
+# Help Desk
 
-A learning-focused FastAPI backend for a help desk ticket system using SQLAlchemy ORM, PostgreSQL, password hashing, JWT authentication, and FastAPI dependency injection.
+A learning-focused help-desk application with a FastAPI backend and a planned React frontend.
 
-## Current status
+## Repository structure
+
+```text
+help-desk/
+├── README.md
+├── .gitignore
+├── server/
+│   ├── .env                 # local secrets; not committed
+│   ├── .env.example         # safe configuration template
+│   ├── pyproject.toml
+│   ├── uv.lock
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── api/v1/
+│   │   ├── core/
+│   │   ├── db/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── schemas/
+│   │   └── services/
+│   └── PROJECT_PROGRESS.md
+└── client/                  # React frontend; planned
+```
+
+The repository root contains shared documentation. Backend code and Python dependencies belong in `server/`. Frontend code and JavaScript dependencies will belong in `client/`.
+
+## Backend status
 
 Implemented:
 
-- FastAPI application bootstrap
+- FastAPI application bootstrap and versioned router structure
 - PostgreSQL connection through SQLAlchemy
-- `User` and `Ticket` ORM models
-- Foreign keys from tickets to users
-- Ticket CRUD route structure
-- User registration and login routes
-- Password hashing with `pwdlib` and Argon2
-- JWT creation with PyJWT
-- Dependency-based authentication
-- Pydantic validation schemas
+- `users`, `tickets`, and `comments` ORM models
+- Ticket CRUD and status-update routes
+- Comment creation and retrieval routes
+- Repository and service layers
+- User registration and login
+- Password hashing with Argon2
+- JWT authentication stored in a cookie
+- Role-based access dependencies
+- Centralized exception handling for application, validation, database, and unexpected errors
 
-Still in progress:
+In progress:
 
-- Connecting the authenticated user to `Ticket.created_by`
-- Ticket ownership and RBAC
-- Transaction rollback handling
 - Alembic migrations
-- Tests
-- Comments and agent assignment
 - Redis rate limiting
-- Render deployment
+- Automated tests
+- Ticket assignment and stricter agent permissions
+- Response-model cleanup and API refinement
+- React frontend
 
-## Architecture
+## Backend architecture
 
 ```text
-HTTP request → FastAPI router → Depends → Service → Repository → SQLAlchemy ORM → PostgreSQL
-```
-
-```text
-app/
-├── main.py
-├── api/v1/
-│   ├── dependencies.py
-│   ├── router.py
-│   └── endpoints/
-│       ├── tickets.py
-│       └── user.py
-├── core/
-│   ├── config.py
-│   └── security.py
-├── db/
-│   ├── base.py
-│   └── postgres.py
-├── models/
-│   ├── tickets.py
-│   └── users.py
-├── repositories/
-├── schemas/
-└── services/
+HTTP request → FastAPI router and dependencies → Service layer
+             → Repository layer → SQLAlchemy ORM → PostgreSQL
 ```
 
 ## Database design
@@ -74,116 +77,103 @@ id, title, description, priority, category, status,
 created_by, assigned_to, created_at, updated_at
 ```
 
-Relationships:
+`created_by` and `assigned_to` reference `users.id`. `assigned_to` is nullable.
+
+### `comments`
 
 ```text
-tickets.created_by  → users.id
-tickets.assigned_to → users.id
+id, ticket_id, user_id, content, created_at, updated_at
 ```
 
-`assigned_to` is nullable because a ticket may not be assigned when it is created.
+Comments reference both the ticket and the user who created them.
 
-The app currently calls `Base.metadata.create_all()` at startup. This creates missing tables but does not safely migrate existing tables. Alembic is required before production deployment.
+The application currently calls `Base.metadata.create_all()` during startup. This is suitable for early development only and should be replaced with Alembic before production use.
 
 ## Technology
 
 - Python 3.15+
 - FastAPI
 - SQLAlchemy
-- PostgreSQL and Psycopg
+- PostgreSQL with Psycopg
 - Pydantic
 - PyJWT
 - pwdlib with Argon2
 - uv
+- React frontend planned
 
 ## Environment configuration
 
-Create `.env` in the `help-desk` directory:
+Copy the server template and fill in local values:
+
+```bash
+cd server
+cp .env.example .env
+```
+
+Example server configuration:
 
 ```env
 APP_NAME="Help Desk"
-DB_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/helpdesk"
+DB_URL="postgresql+psycopg://YOUR_USER:YOUR_PASSWORD@localhost:5432/helpdesk"
 SECRET_KEY="use-a-long-random-secret-at-least-32-bytes"
 ALGORITHM="HS256"
 EXP_DURATION="60"
 SESSION_KEY="access_token"
 ```
 
-Do not commit `.env` or expose `SECRET_KEY`.
+Never commit `.env` or expose `SECRET_KEY`.
 
-## Setup
+## Run the backend
 
 ```bash
+cd server
 uv sync
 uv run fastapi dev
 ```
 
-The app runs at `http://127.0.0.1:8000`.
+The API runs at `http://127.0.0.1:8000`. Swagger UI is currently available at `/`.
 
-Swagger UI is currently configured at `/` because `main.py` uses `docs_url="/"`.
+## Current API routes
 
-## Current routes
-
-The router is stored under `api/v1`, but it currently does not add `/api/v1` to the URL. Routes currently use `/auth` and `/tickets` directly.
-
-### Authentication
+Authentication:
 
 ```text
-POST /auth/register
-POST /auth/login
-POST /auth/forget
-DELETE /auth/{user_id}
+POST   /auth/register
+POST   /auth/login
+POST   /auth/forget
+GET    /auth/logout
+DELETE /auth/{id}
 ```
 
-Registration accepts name, email, and password. Passwords are hashed before storage and new users receive the default `user` role.
-
-Successful login creates a JWT and stores it in the cookie configured by `SESSION_KEY`.
-
-Password reset and user deletion are development flows and do not yet have complete authorization rules.
-
-### Tickets
+Tickets:
 
 ```text
 GET    /tickets/health-check
 POST   /tickets/
 GET    /tickets/
-GET    /tickets/{ticket_id}
-PUT    /tickets/{ticket_id}/
-DELETE /tickets/{ticket_id}/
+GET    /tickets/{id}
+PUT    /tickets/{id}/
+DELETE /tickets/{id}/
+PATCH  /tickets/{id}/status
 ```
 
-Ticket creation accepts title, description, priority, and category. The client must not send `created_by`; the backend must derive it from the authenticated user.
-
-## Authentication design
-
-Authentication uses FastAPI dependencies, not `@app.middleware("http")`.
-
-The authentication dependency reads the JWT cookie, decodes the token, extracts the user ID from `sub`, loads the user from PostgreSQL, and checks whether the account is active.
-
-The ticket and user routers currently receive the authentication dependency at router level. Public routes are excluded using `PUBLIC_ROUTES`.
-
-## Known limitations and next changes
-
-1. Pass the authenticated user ID into ticket creation as `created_by`.
-2. Add ownership checks for ticket reads, updates, and deletes.
-3. Add explicit RBAC guards for users, agents, and admins.
-4. Add response models to every route.
-5. Add rollback handling to database writes.
-6. Handle duplicate email registration cleanly.
-7. Move JWT creation from the repository into the service/security layer.
-8. Protect and redesign password reset.
-9. Add Alembic migrations.
-10. Add unit and integration tests.
-11. Add comments and ticket assignment.
-12. Add Redis rate limiting.
-13. Add Render deployment configuration.
-14. Add the `/api/v1` URL prefix if that contract is retained.
-
-## Development milestone
+Comments:
 
 ```text
-Register → Login → JWT cookie → Current-user dependency → Ticket.created_by → Ownership and RBAC
+GET /tickets/{ticket_id}/comments/health
+PUT /tickets/{ticket_id}/comments/
+GET /tickets/{ticket_id}/comments/
 ```
+
+## Planned development order
+
+1. Add Redis rate limiting for authentication endpoints.
+2. Add Alembic and replace `Base.metadata.create_all()`.
+3. Add automated API and authorization tests.
+4. Add ticket assignment and complete agent permissions.
+5. Create the React frontend inside `client/`.
+6. Connect the frontend to the backend API.
+7. Add deployment configuration.
 
 ## License
 
