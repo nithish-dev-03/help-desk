@@ -26,4 +26,5 @@ class CommentRepository:
             return self.db.query(Comment).filter(Comment.ticket_id == ticket_id,Comment.user_id ==user_id ).all()
 
     def get_ticket_owner(self,ticket_id:int)->int:
-        return self.db.query(Ticket).filter(Ticket.id == ticket_id).first().created_by
+        ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        return ticket.created_by if ticket else None

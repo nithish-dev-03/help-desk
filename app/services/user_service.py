@@ -1,11 +1,14 @@
 from app.repositories.user_repository import UserRepository
 from app.schemas.users import UserRegister, UserLogin
+from app.core.exceptions import EmailAlreadyExists
 
 class UserService:
     def __init__(self, repo:UserRepository):
         self.repo = repo
 
     def register_user(self,payload:UserRegister):
+        if self.repo.get_by_email(payload.email):
+            raise EmailAlreadyExists()
         return self.repo.create_user(payload)
 
     def verify_user(self,payload:UserLogin) -> bool:

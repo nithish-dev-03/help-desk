@@ -22,6 +22,9 @@ class UserRepository:
         self.db.refresh(user_data)
         return user_data
 
+    def get_by_email(self, email: str):
+        return self.db.query(User).filter(User.email == email).first()
+
     def login_user(self, payload: UserLogin):
         db_data =self.db.query(User).filter(User.email == payload.email).first()
 
