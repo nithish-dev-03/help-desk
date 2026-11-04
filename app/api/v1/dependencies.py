@@ -5,7 +5,7 @@ from app.core.security import decode
 from app.models.users import User
 
 def get_current_user(request: Request,token: str | None = Cookie(default=None, alias=SESSION_KEY),db=Depends(get_db)):
-    if request.url.path in PUBLIC_ROUTES:
+    if request.url.path.endswith(tuple(PUBLIC_ROUTES)):
         return None
 
     if not token:

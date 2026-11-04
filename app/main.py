@@ -6,9 +6,9 @@ from app.db.base import Base
 
 from app.models.tickets import Ticket
 from app.models.users import User
+from app.models.comments import Comment
 
 app = FastAPI(docs_url="/",title=APP_NAME )
 Base.metadata.create_all(bind=engine)
 
 app.include_router(router)
-

@@ -10,4 +10,4 @@ ALGORITHM = os.getenv("ALGORITHM")
 TIME_LIMIT = int(os.getenv("EXP_DURATION","60"))
 SESSION_KEY = os.getenv("SESSION_KEY")
 
-PUBLIC_ROUTES = ["/auth/login","/auth/register","/auth/forget"]
+PUBLIC_ROUTES = ["/auth/login","/auth/register","/auth/forget","/tickets/health-check","/comments/health"]
