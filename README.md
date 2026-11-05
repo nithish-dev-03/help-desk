@@ -43,11 +43,11 @@ Implemented:
 - JWT authentication stored in a cookie
 - Role-based access dependencies
 - Centralized exception handling for application, validation, database, and unexpected errors
+- Alembic migrations for the PostgreSQL schema
+- Redis-backed rate limiting for authentication endpoints
 
 In progress:
 
-- Alembic migrations
-- Redis rate limiting
 - Automated tests
 - Ticket assignment and stricter agent permissions
 - Response-model cleanup and API refinement
@@ -87,7 +87,7 @@ id, ticket_id, user_id, content, created_at, updated_at
 
 Comments reference both the ticket and the user who created them.
 
-The application currently calls `Base.metadata.create_all()` during startup. This is suitable for early development only and should be replaced with Alembic before production use.
+Database schema changes are managed with Alembic. `Base.metadata.create_all()` is disabled in the application startup.
 
 ## Technology
 
@@ -119,15 +119,54 @@ SECRET_KEY="use-a-long-random-secret-at-least-32-bytes"
 ALGORITHM="HS256"
 EXP_DURATION="60"
 SESSION_KEY="access_token"
+REDIS_URL="redis://localhost:6379/0"
+RATE_LIMIT_FAIL_OPEN="false"
+TRUST_PROXY="false"
 ```
 
 Never commit `.env` or expose `SECRET_KEY`.
+
+## Run Redis with Docker
+
+The backend uses Redis for rate limiting. Start Redis from the `server/` directory:
+
+```bash
+cd server
+docker compose up -d redis
+docker compose ps
+docker compose exec redis redis-cli ping
+```
+
+The last command should return:
+
+```text
+PONG
+```
+
+If Docker reports permission denied for `/var/run/docker.sock`, add your user to the Docker group:
+
+```bash
+sudo usermod -aG docker "$USER"
+newgrp docker
+docker ps
+docker compose up -d redis
+```
+
+You can also log out and back in after running `usermod`. If the current session still cannot access Docker, use the temporary fallback:
+
+```bash
+sudo docker compose up -d redis
+sudo docker compose exec redis redis-cli ping
+```
+
+The Redis container is bound to `localhost:6379`, matching `REDIS_URL` above. The Python Redis client is installed through the server project dependencies; no separate local Redis installation is required when Docker is available.
 
 ## Run the backend
 
 ```bash
 cd server
 uv sync
+docker compose up -d redis
 uv run fastapi dev
 ```
 
@@ -167,13 +206,12 @@ GET /tickets/{ticket_id}/comments/
 
 ## Planned development order
 
-1. Add Redis rate limiting for authentication endpoints.
-2. Add Alembic and replace `Base.metadata.create_all()`.
-3. Add automated API and authorization tests.
-4. Add ticket assignment and complete agent permissions.
-5. Create the React frontend inside `client/`.
-6. Connect the frontend to the backend API.
-7. Add deployment configuration.
+1. Add automated API and authorization tests.
+2. Add ticket assignment and complete agent permissions.
+3. Improve response models and API refinement.
+4. Create the React frontend inside `client/`.
+5. Connect the frontend to the backend API.
+6. Add deployment configuration.
 
 ## License
 

@@ -5,10 +5,11 @@ from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 from datetime import datetime, timedelta, timezone
 from app.core.config import TIME_LIMIT,SESSION_KEY
+from app.core.rate_limit import rate_limit
 
 user_router = APIRouter(prefix="/auth",tags=["auth"])
 
-@user_router.post("/login")
+@user_router.post("/login", dependencies=[Depends(rate_limit("login", max_requests=5, window_seconds=60))])
 def login(payload: UserLogin, response: Response, db=Depends(get_db)):
     repo = UserRepository(db)
     service = UserService(repo)
@@ -27,7 +28,7 @@ def login(payload: UserLogin, response: Response, db=Depends(get_db)):
             "Message":"Invalid credential"
         }
 
-@user_router.post("/register")
+@user_router.post("/register", dependencies=[Depends(rate_limit("register", max_requests=10, window_seconds=3600))])
 def register(payload:UserRegister,db=Depends(get_db)):
     repo = UserRepository(db)
     service = UserService(repo)
@@ -39,7 +40,7 @@ def register(payload:UserRegister,db=Depends(get_db)):
         "message":f"Welcome {res_data.name}!"
     }
 
-@user_router.post("/forget")
+@user_router.post("/forget", dependencies=[Depends(rate_limit("forget-password", max_requests=5, window_seconds=3600))])
 def forget_password(payload:UserLogin,db=Depends(get_db)):
     repo= UserRepository(db)
     service = UserService(repo)
