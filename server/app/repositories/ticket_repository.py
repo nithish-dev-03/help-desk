@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from app.models.tickets import Ticket
+from app.models.comments import Comment
 from app.schemas.tickets import TicketCreate, TicketUpdate
 
 class TicketRepository:
@@ -53,9 +55,16 @@ class TicketRepository:
          db_data = self.db.query(Ticket).filter(Ticket.id == id).first()
          if not db_data:
               return None
-         self.db.delete(db_data)
-         self.db.commit()
-         return db_data
+         try:
+              self.db.query(Comment).filter(
+                   Comment.ticket_id == id
+              ).delete(synchronize_session=False)
+              self.db.delete(db_data)
+              self.db.commit()
+              return db_data
+         except SQLAlchemyError:
+              self.db.rollback()
+              raise
 
     def update_status_by_id(self, id: int, status: str) -> Ticket | None:
          db_data = self.db.query(Ticket).filter(Ticket.id == id).first()

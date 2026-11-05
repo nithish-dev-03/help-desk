@@ -60,12 +60,7 @@ def get_ticket_with_id(id:int,db=Depends(get_db), user_data:User = Depends(role_
     }
 
 @ticket_router.put("/{id}/")
-def update_ticket(
-    id: int,
-    data: TicketUpdate,
-    db: Session = Depends(get_db),
-    user_data: User = Depends(role_based_access("admin")),
-):
+def update_ticket(id: int, data: TicketUpdate, db: Session = Depends(get_db), user_data: User = Depends(role_based_access("admin"))):
     """
     Create new Ticket
     """
@@ -90,12 +85,7 @@ def remove_ticket(id:int,db=Depends(get_db), user_data:User = Depends(role_based
     }
 
 @ticket_router.patch("/{id}/status")
-def update_ticket_status(
-    id: int,
-    data: TicketStatusUpdate,
-    db: Session = Depends(get_db),
-    user_data: User = Depends(role_based_access("admin", "agent")),
-):
+def update_ticket_status(id: int, data: TicketStatusUpdate, db: Session = Depends(get_db), user_data: User = Depends(role_based_access("admin", "agent"))):
     repo = TicketRepository(db)
     service = TicketService(repo)
 

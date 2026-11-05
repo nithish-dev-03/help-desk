@@ -1,5 +1,8 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from app.models.users import User
+from app.models.tickets import Ticket
+from app.models.comments import Comment
 from app.schemas.users import UserRegister, UserLogin
 from app.core.security import hash_password, verify_password
 from app.core.security import encode
@@ -55,9 +58,18 @@ class UserRepository:
 
     def delete_user(self,id:int):
         db_data = self.db.get(User,id)
-        if db_data:
+        if not db_data:
+            return None
+
+        try:
+            owned_ticket_ids = self.db.query(Ticket.id).filter(Ticket.created_by == id).subquery()
+            self.db.query(Comment).filter((Comment.user_id == id) |(Comment.ticket_id.in_(owned_ticket_ids))).delete(synchronize_session=False)
+            self.db.query(Ticket).filter(Ticket.assigned_to == id,Ticket.created_by != id,).update({Ticket.assigned_to: None}, synchronize_session=False)
+            self.db.query(Ticket).filter(Ticket.created_by == id).delete(synchronize_session=False)
+
             self.db.delete(db_data)
             self.db.commit()
             return db_data
-        else:
-            return None
+        except SQLAlchemyError:
+            self.db.rollback()
+            raise
