@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Toast } from '@/components/ui/Toast';
 import { useApiHealth } from '@/features/diagnostics/useApiHealth';
 
 interface HeaderProps {
@@ -10,8 +11,37 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
   const [searchVal, setSearchVal] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const { isOnline, isLoading } = useApiHealth();
+
+  const dismissToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+    setToastMessage(null);
+  };
+
+  const handleNotificationsClick = () => {
+    setToastMessage('Feature coming soon — notifications will be available shortly.');
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -54,6 +84,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
 
         <button
           type="button"
+          onClick={handleNotificationsClick}
           className="relative p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded transition-colors"
           title="Notifications"
           aria-label="Notifications"
@@ -71,6 +102,12 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
           New Ticket
         </Button>
       </div>
+
+      {toastMessage && (
+        <div className="fixed top-16 right-6 z-50 w-full max-w-xs">
+          <Toast message={toastMessage} variant="info" onClose={dismissToast} />
+        </div>
+      )}
     </header>
   );
 };
