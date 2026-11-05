@@ -255,7 +255,7 @@ export const CreateTicketPage: React.FC = () => {
             </div>
 
             {/* Mock Dropzone (Stitch spec) */}
-            <div>
+            {/* <div>
               <label className="text-xs font-medium text-on-surface block mb-1">
                 Diagnostic Attachments (Optional)
               </label>
@@ -268,7 +268,7 @@ export const CreateTicketPage: React.FC = () => {
                   PNG, JPG, LOG, JSON ≤ 25MB
                 </span>
               </div>
-            </div>
+            </div> */}
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-outline-variant">

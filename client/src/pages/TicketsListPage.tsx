@@ -12,7 +12,7 @@ import { TicketStatusDialog } from '@/components/tickets/TicketStatusDialog';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
 import { RefreshCw } from 'lucide-react';
-import { formatErrorMessage } from '@/lib/errors';
+import { AppApiError, formatErrorMessage } from '@/lib/errors';
 
 export const TicketsListPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -34,6 +34,7 @@ export const TicketsListPage: React.FC = () => {
 
   const [statusTicket, setStatusTicket] = useState<Ticket | null>(null);
   const [deleteTicket, setDeleteTicket] = useState<Ticket | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const {
     data: rawTickets = [],
@@ -52,7 +53,15 @@ export const TicketsListPage: React.FC = () => {
     },
     onSuccess: () => {
       setDeleteTicket(null);
+      setDeleteError(null);
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+    onError: (err) => {
+      setDeleteError(
+        err instanceof AppApiError && err.status === 409
+          ? 'This ticket cannot be deleted because it has related conversation records. Resolve or archive the ticket instead.'
+          : formatErrorMessage(err)
+      );
     },
   });
 
@@ -245,6 +254,12 @@ export const TicketsListPage: React.FC = () => {
               Retry Dispatch
             </Button>
           </div>
+        </Alert>
+      )}
+
+      {deleteError && (
+        <Alert variant="error" title="Ticket Deletion Failed" onDismiss={() => setDeleteError(null)}>
+          {deleteError}
         </Alert>
       )}
 

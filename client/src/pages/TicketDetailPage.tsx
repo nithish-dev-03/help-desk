@@ -13,7 +13,7 @@ import { TicketStatusDialog } from '@/components/tickets/TicketStatusDialog';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Alert } from '@/components/ui/Alert';
 import { formatTicketId, formatDate, formatTimeAgo } from '@/lib/utils';
-import { formatErrorMessage } from '@/lib/errors';
+import { AppApiError, formatErrorMessage } from '@/lib/errors';
 import {
   ArrowLeft,
   Edit,
@@ -33,6 +33,7 @@ export const TicketDetailPage: React.FC = () => {
 
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'admin';
   const isAgentOrAdmin = user?.role === 'agent' || user?.role === 'admin';
@@ -67,6 +68,14 @@ export const TicketDetailPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
       navigate('/tickets');
+    },
+    onError: (err) => {
+      setDeleteError(
+        err instanceof AppApiError && err.status === 409
+          ? 'This ticket cannot be deleted because it has related conversation records. Resolve or archive the ticket instead.'
+          : formatErrorMessage(err)
+      );
+      setIsDeleteModalOpen(false);
     },
   });
 
@@ -106,6 +115,11 @@ export const TicketDetailPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-[1540px] mx-auto w-full space-y-6">
+      {deleteError && (
+        <Alert variant="error" title="Ticket Deletion Failed" onDismiss={() => setDeleteError(null)}>
+          {deleteError}
+        </Alert>
+      )}
       {/* Workspace Control & Ticket Title Header */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-xs space-y-4">
         {/* Breadcrumb, Meta Tags & Actions */}
