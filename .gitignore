@@ -1,9 +1,10 @@
 # Python bytecode and cache directories
-**/__pycache__/
-*.pyc
-*.pyo
-*.pyd
+__pycache__/
+*.py[cod]
 *$py.class
+.mypy_cache/
+.pyright/
+.ruff_cache/
 
 # Virtual environment
 .venv/
@@ -29,12 +30,17 @@ Thumbs.db
 # Test/cache outputs
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 
 # Build artifacts
 build/
 dist/
 *.egg-info/
+
+# JavaScript dependencies and build output
+node_modules/
+client/dist/
 
 # Local database files
 *.sqlite3
