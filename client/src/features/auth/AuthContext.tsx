@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthSessionUser, UserLoginPayload, UserRegistrationPayload, UserRole } from '@/types/auth';
 import { authApi } from './auth-api';
-import { getCookie, parseJwt } from '@/lib/utils';
 import { queryClient } from '@/app/query-client';
 
 interface AuthContextType {
@@ -15,17 +14,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const SESSION_COOKIE_NAME = import.meta.env.VITE_SESSION_COOKIE_NAME || 'helpdesk';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [actualUser, setActualUser] = useState<AuthSessionUser | null>(() => {
-    try {
-      const stored = localStorage.getItem('helpdesk_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [actualUser, setActualUser] = useState<AuthSessionUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const user = actualUser;
@@ -41,24 +32,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    const token = getCookie(SESSION_COOKIE_NAME);
-    const payload = token
-      ? parseJwt<{ sub: string; email: string; role: UserRole; exp: number }>(token)
-      : null;
+    let mounted = true;
 
-    if (!payload || !payload.sub || payload.exp * 1000 <= Date.now()) {
-      clearSession();
-    } else {
-      const sessionUser: AuthSessionUser = {
-        id: parseInt(payload.sub, 10),
-        email: payload.email,
-        name: actualUser?.name || payload.email.split('@')[0],
-        role: payload.role,
-      };
-      setActualUser(sessionUser);
-      localStorage.setItem('helpdesk_user', JSON.stringify(sessionUser));
-    }
-    setIsLoading(false);
+    const restoreSession = async () => {
+      try {
+        const response = await authApi.getCurrentUser();
+        if (mounted && response.status && response.user) {
+          setActualUser(response.user);
+          localStorage.setItem('helpdesk_user', JSON.stringify(response.user));
+        }
+      } catch {
+        // A missing or expired HttpOnly cookie means there is no session.
+        if (mounted) clearSession();
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    void restoreSession();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const clearSession = () => {
@@ -68,23 +62,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (payload: UserLoginPayload) => {
     await authApi.login(payload);
-    const token = getCookie(SESSION_COOKIE_NAME);
-    const jwtData = token
-      ? parseJwt<{ sub: string; email: string; role: UserRole }>(token)
-      : null;
-
-    if (!jwtData?.sub || !jwtData.email || !jwtData.role) {
-      throw new Error('Login succeeded, but the session cookie was not established.');
+    const response = await authApi.getCurrentUser();
+    if (!response.status || !response.user) {
+      throw new Error('Login succeeded, but the current user could not be loaded.');
     }
 
-    const sessionUser: AuthSessionUser = {
-      id: parseInt(jwtData.sub, 10),
-      email: jwtData.email,
-      name: payload.email.split('@')[0],
-      role: jwtData.role,
-    };
-    setActualUser(sessionUser);
-    localStorage.setItem('helpdesk_user', JSON.stringify(sessionUser));
+    setActualUser(response.user);
+    localStorage.setItem('helpdesk_user', JSON.stringify(response.user));
     queryClient.invalidateQueries();
   };
 

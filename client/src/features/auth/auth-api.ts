@@ -4,6 +4,7 @@ import {
   UserRegistrationPayload,
   UserResetPasswordPayload,
   User,
+  CurrentUserResponse,
 } from '@/types/auth';
 import { ApiResponse } from '@/types/api';
 
@@ -13,6 +14,10 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+  },
+
+  getCurrentUser: async (): Promise<CurrentUserResponse> => {
+    return apiClient<CurrentUserResponse>('/auth/me');
   },
 
   register: async (

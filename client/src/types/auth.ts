@@ -32,3 +32,10 @@ export interface AuthSessionUser {
   email: string;
   role: UserRole;
 }
+
+export interface CurrentUserResponse {
+  status: boolean;
+  user: AuthSessionUser & {
+    is_active: boolean;
+  };
+}

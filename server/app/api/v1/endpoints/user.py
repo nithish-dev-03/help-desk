@@ -4,8 +4,15 @@ from app.db.postgres import get_db
 from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 from datetime import datetime, timedelta, timezone
-from app.core.config import TIME_LIMIT,SESSION_KEY
+from app.core.config import (
+    SESSION_COOKIE_SAMESITE,
+    SESSION_COOKIE_SECURE,
+    SESSION_KEY,
+    TIME_LIMIT,
+)
 from app.core.rate_limit import rate_limit
+from app.models.users import User
+from app.api.v1.dependencies import get_current_user
 
 user_router = APIRouter(prefix="/auth",tags=["auth"])
 
@@ -16,7 +23,15 @@ def login(payload: UserLogin, response: Response, db=Depends(get_db)):
     data = service.verify_user(payload)
     if data:
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=TIME_LIMIT)
-        response.set_cookie(key=SESSION_KEY,value=data,expires=expires_at,httponly=False)
+        response.set_cookie(
+            key=SESSION_KEY,
+            value=data,
+            expires=expires_at,
+            httponly=True,
+            secure=SESSION_COOKIE_SECURE,
+            samesite=SESSION_COOKIE_SAMESITE,
+            path="/",
+        )
         
         return{
             "status":True,
@@ -73,9 +88,31 @@ def delete_user(id:int,db=Depends(get_db)):
         }
 
 @user_router.get("/logout")
-def logout(response:Response): 
-    response.delete_cookie(SESSION_KEY)
+def logout(response: Response):
+    response.delete_cookie(
+        key=SESSION_KEY,
+        secure=SESSION_COOKIE_SECURE,
+        httponly=True,
+        samesite=SESSION_COOKIE_SAMESITE,
+        path="/",
+    )
+
     return {
-        "status":True,
-        "message":"Logout succesfully"
+        "status": True,
+        "message": "Logout successfully"
+    }
+
+@user_router.get("/me")
+def get_logged_in_user(
+    current_user: User = Depends(get_current_user)
+):
+    return {
+        "status": True,
+        "user": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email,
+            "role": current_user.role,
+            "is_active": current_user.is_active
+        }
     }
