@@ -45,7 +45,7 @@ The interface is engineered according to the **Stitch Design System** (Project I
 
    The `.env` file contains:
    ```env
-   VITE_API_BASE_URL=http://127.0.0.1:8000
+   VITE_API_BASE_URL=https://help-desk-ooyn.onrender.com
    ```
    > **Note:** During local development, the Vite dev server automatically proxies `/auth` and `/tickets` to `http://127.0.0.1:8000`. This ensures cross-origin cookie-based session authentication works seamlessly on `localhost`.
 

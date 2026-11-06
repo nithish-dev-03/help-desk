@@ -10,7 +10,6 @@ import { formatErrorMessage } from '@/lib/errors';
 import { useAuth } from '@/features/auth/useAuth';
 import {
   Send,
-  UploadCloud,
   Bold,
   Italic,
   Code,
