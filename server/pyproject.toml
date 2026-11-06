@@ -3,7 +3,7 @@ name = "help-desk"
 version = "0.1.0"
 description = "This is the help desk application created for learning"
 readme = "README.md"
-requires-python = ">=3.15"
+requires-python = ">=3.14,<3.15"
 dependencies = [
     "alembic>=1.20.1",
     "fastapi[standard]>=0.162.0",
