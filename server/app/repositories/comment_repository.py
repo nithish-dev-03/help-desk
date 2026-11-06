@@ -19,11 +19,15 @@ class CommentRepository:
 
         return comment
 
-    def get_comments_by_ticket(self,ticket_id: int,user_id:int|None) ->list[CommentResponse] :
-        # if not user_id:
-        #     return self.db.query(Comment).filter(Comment.ticket_id == ticket_id).order_by(Comment.created_at.asc()).all()
-        # else:
-        return self.db.query(Comment).filter(Comment.ticket_id == ticket_id,Comment.user_id ==user_id ).order_by(Comment.created_at.asc()).all()
+    def get_comments_by_ticket(self, ticket_id: int, user_id: int | None):
+        query = self.db.query(Comment).filter(Comment.ticket_id == ticket_id)
+
+        # if user_id is not None:
+        #     query = query.join(Ticket, Ticket.id == Comment.ticket_id).filter(
+        #         (Ticket.created_by == user_id) | (Ticket.assigned_to == user_id)
+        #     )
+
+        return query.order_by(Comment.created_at.asc()).all()
 
     def get_ticket_owner(self,ticket_id:int)->int:
         ticket = self.db.query(Ticket).filter(Ticket.id == ticket_id).first()
