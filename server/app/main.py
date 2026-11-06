@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError
-from app.core.config import APP_NAME
+from app.core.config import APP_NAME, FRONTEND_ORIGINS, FRONTEND_ORIGIN_REGEX
 from app.core.redis import close_redis, initialize_redis
 from app.core.config import RATE_LIMIT_FAIL_OPEN
 from app.api.v1.router import router
@@ -30,7 +30,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(docs_url="/", title=APP_NAME, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://help-desk-7i72.vercel.app"],
+    allow_origins=FRONTEND_ORIGINS,
+    allow_origin_regex=FRONTEND_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
